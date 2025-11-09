@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reddit Posts Viewer</title>
+
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Reddit Posts Viewer</h1>
+      <div class="subtitle" id="subtitle">Real-time Reddit data with comments and replies</div>
+      <button class="refresh-btn" onclick="fetchData()">Refresh</button>
+    </div>
+
+    <div id="loading" class="loading">
+      <div>Loading...</div>
+    </div>
+
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div id="content"></div>
+  </div>
+
+  <script>
+    // Parse URL parameters
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+
+      // Required parameter
+      const subreddit = params.get('subreddit') || params.get('channel');
+
+      if (!subreddit) {
+        throw new Error('Required parameter missing: subreddit (or channel)');
+      }
+
+      // Optional parameters with defaults
+      const apiKey = params.get('apiKey') || 'secret';
+      const topPostsCount = params.get('topPostsCount') || '25';
+      const maxComments = params.get('maxComments') || '100';
+      const minimumCommentScore = params.get('minimumCommentScore') || '1';
+
+      return {
+        subreddit,
+        apiKey,
+        topPostsCount,
+        maxComments,
+        minimumCommentScore
+      };
+    }
+
+    // Build API URL from parameters
+    function buildApiUrl() {
+      const params = getUrlParams();
+      const baseUrl = 'https://helper.lnservice.online/api/v1/reddit/fetch';
+
+      return `${baseUrl}?subreddit=${encodeURIComponent(params.subreddit)}&apiKey=${encodeURIComponent(params.apiKey)}&topPostsCount=${params.topPostsCount}&maxComments=${params.maxComments}&minimumCommentScore=${params.minimumCommentScore}`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function toggleCollapse(elementId) {
+      const element = document.getElementById(elementId);
+      const button = document.querySelector(`[onclick="toggleCollapse('${elementId}')"]`);
+
+      if (element.classList.contains('collapsed')) {
+        element.classList.remove('collapsed');
+        element.style.maxHeight = element.scrollHeight + 'px';
+        if (button) button.textContent = '▼';
+      } else {
+        element.style.maxHeight = element.scrollHeight + 'px';
+        element.offsetHeight; // Force reflow
+        element.classList.add('collapsed');
+        if (button) button.textContent = '►';
+      }
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    let commentCounter = 0;
+
+    function renderComment(comment, depth = 0) {
+      const depthClass = `depth-${Math.min(depth, 4)}`;
+      const hasReplies = comment.replies && comment.replies.length > 0;
+      const commentId = `comment-${commentCounter++}`;
+      const repliesId = `${commentId}-replies`;
+
+      let html = `
+        <div class="comment ${depthClass}">
+          <div class="comment-header">
+      `;
+
+      // Add collapse button if there are replies
+      if (hasReplies) {
+        html += `<button class="collapse-btn" onclick="toggleCollapse('${repliesId}')">▼</button>`;
+      } else {
+        html += `<span style="width: 16px; display: inline-block;"></span>`;
+      }
+
+      html += `
+            <div style="flex: 1;">
+              <div class="comment-author">
+                <span>u/${escapeHtml(comment.author)}</span>
+                <span class="comment-score">${comment.score} score</span>
+              </div>
+              <div class="comment-meta">
+                ${formatDate(comment.created)}
+              </div>
+              <div class="comment-body">${escapeHtml(comment.body)}</div>
+            </div>
+          </div>
+      `;
+
+      // Recursively render replies
+      if (hasReplies) {
+        html += `<div class="collapsible-content" id="${repliesId}" style="max-height: 100000px;">`;
+        comment.replies.forEach(reply => {
+          html += renderComment(reply, depth + 1);
+        });
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+      return html;
+    }
+
+    function renderPost(post, index) {
+      const hasText = post.selftext && post.selftext.trim();
+      const hasComments = post.comments && post.comments.length > 0;
+      const postId = `post-${index}`;
+      const commentsId = `comments-${index}`;
+
+      let html = `
+        <div class="post" id="${postId}">
+          <div class="post-header">
+            <div class="post-title">
+              <button class="collapse-btn" onclick="toggleCollapse('${postId}-content')">▼</button>
+              <div class="post-title-text">
+                ${index + 1}. <a href="${post.url}" target="_blank">${escapeHtml(post.title)}</a>
+              </div>
+            </div>
+            <div class="post-meta">
+              <div class="meta-item">
+                <span class="score-badge">${post.score} pts</span>
+              </div>
+              <div class="meta-item">
+                <span class="author">u/${escapeHtml(post.author)}</span>
+              </div>
+              <div class="meta-item">
+                ${post.numComments} comments
+              </div>
+              <div class="meta-item">
+                ${formatDate(post.created)}
+              </div>
+            </div>
+          </div>
+
+          <div class="collapsible-content" id="${postId}-content" style="max-height: 100000px;">
+            <div class="post-links">
+              <a href="${post.url}" target="_blank" class="post-link">View content</a>
+              <a href="https://reddit.com${post.permalink}" target="_blank" class="post-link">Reddit</a>
+            </div>
+      `;
+
+      if (hasText) {
+        html += `
+            <div class="post-text">
+              ${escapeHtml(post.selftext)}
+            </div>
+        `;
+      }
+
+      if (hasComments) {
+        html += `
+            <div class="comments-section">
+              <div class="comments-header">
+                <button class="collapse-btn" onclick="toggleCollapse('${commentsId}')">▼</button>
+                Comments
+                <span class="comment-count">${post.comments.length}</span>
+              </div>
+              <div class="collapsible-content" id="${commentsId}" style="max-height: 100000px;">
+        `;
+
+        post.comments.forEach(comment => {
+          html += renderComment(comment, 0);
+        });
+
+        html += `
+              </div>
+            </div>
+        `;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+      return html;
+    }
+
+    function renderData(data) {
+      const contentDiv = document.getElementById('content');
+      commentCounter = 0; // Reset counter for each render
+
+      let html = `
+        <div class="header">
+          <h2>r/${data.subreddit}</h2>
+          <div class="stats">
+            <div class="stat-card">
+              <div class="stat-label">Posts</div>
+              <div class="stat-value">${data.stats.returnedPosts}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Posts with Comments</div>
+              <div class="stat-value">${data.stats.postsWithComments}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Max Comments</div>
+              <div class="stat-value">${data.config.maxComments}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Min Score</div>
+              <div class="stat-value">${data.config.minimumCommentScore}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Hours Back</div>
+              <div class="stat-value">${data.config.hoursBack}h</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Source</div>
+              <div class="stat-value">${data.fromCache ? 'Cache' : 'Fresh'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="post-nav">
+          <div class="post-nav-header">Posts Navigation</div>
+          <div class="post-nav-list">
+      `;
+
+      data.posts.forEach((post, index) => {
+        html += `
+            <a href="#post-${index}" class="post-nav-item">
+              <span>${index + 1}.</span>
+              <span style="flex: 1;">${escapeHtml(post.title)}</span>
+              <span class="post-nav-score">${post.score} pts</span>
+            </a>
+        `;
+      });
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      data.posts.forEach((post, index) => {
+        html += renderPost(post, index);
+      });
+
+      contentDiv.innerHTML = html;
+    }
+
+    async function fetchData() {
+      const loadingDiv = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      const contentDiv = document.getElementById('content');
+
+      // Update subtitle
+      updateSubtitle();
+
+      // Show loading
+      loadingDiv.style.display = 'block';
+      errorDiv.style.display = 'none';
+      contentDiv.innerHTML = '';
+
+      try {
+        const apiUrl = buildApiUrl();
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.message || 'API returned error');
+        }
+
+        // Hide loading and render data
+        loadingDiv.style.display = 'none';
+        renderData(data);
+
+      } catch (error) {
+        loadingDiv.style.display = 'none';
+        errorDiv.style.display = 'block';
+
+        let errorMessage = escapeHtml(error.message);
+
+        // Check if it's a parameter error
+        if (error.message.includes('Required parameter')) {
+          errorMessage += `<br><br><strong>Usage:</strong> Add ?subreddit=SUBREDDIT_NAME to the URL<br>Example: ?subreddit=ClaudeAI&maxComments=50`;
+        }
+
+        errorDiv.innerHTML = `
+          <strong>Error:</strong> ${errorMessage}
+          <br><br>
+          <button class="refresh-btn" onclick="location.reload()">Reload</button>
+        `;
+        console.error('Error fetching data:', error);
+      }
+    }
+
+    // Update subtitle with current parameters
+    function updateSubtitle() {
+      try {
+        const params = getUrlParams();
+        const subtitle = document.getElementById('subtitle');
+        subtitle.textContent = `r/${params.subreddit} · ${params.topPostsCount} posts · ${params.maxComments} comments · min score ${params.minimumCommentScore}`;
+      } catch (error) {
+        // If params are invalid, don't update subtitle
+      }
+    }
+
+    // Initialize on page load
+    try {
+      updateSubtitle();
+      fetchData();
+    } catch (error) {
+      const errorDiv = document.getElementById('error');
+      const loadingDiv = document.getElementById('loading');
+      loadingDiv.style.display = 'none';
+      errorDiv.style.display = 'block';
+      errorDiv.innerHTML = `
+        <strong>Error:</strong> ${escapeHtml(error.message)}
+        <br><br>Add ?subreddit=SUBREDDIT_NAME to the URL
+      `;
+    }
+  </script>
+</body>
+</html>

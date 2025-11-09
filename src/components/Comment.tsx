@@ -1,0 +1,76 @@
+'use client';
+
+import type { RedditComment } from '@/types/reddit';
+import { useState } from 'react';
+
+interface CommentProps {
+  comment: RedditComment;
+  depth?: number;
+}
+
+const BORDER_COLORS = [
+  'border-orange-500',
+  'border-blue-500',
+  'border-emerald-500',
+  'border-amber-500',
+  'border-purple-500',
+];
+
+export function Comment({ comment, depth = 0 }: CommentProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const hasReplies = comment.replies && comment.replies.length > 0;
+  const borderColor = BORDER_COLORS[Math.min(depth, BORDER_COLORS.length - 1)];
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  return (
+    <div className={`my-3 border-l-2 pl-3 ${borderColor}`}>
+      <div className="flex gap-2">
+        {hasReplies
+          ? (
+              <button
+                type="button"
+                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded border border-gray-300 bg-white text-xs text-gray-600 transition-colors hover:bg-gray-50"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+              >
+                {isCollapsed ? '►' : '▼'}
+              </button>
+            )
+          : <div className="w-6 flex-shrink-0" />}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className="text-sm font-semibold text-gray-700">
+              u/
+              {comment.author}
+            </span>
+            <span className="text-xs font-medium text-orange-600">
+              {comment.score}
+              {' '}
+              points
+            </span>
+            <span className="text-xs text-gray-500">{formatDate(comment.created)}</span>
+          </div>
+          <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-gray-800">
+            {comment.body}
+          </p>
+        </div>
+      </div>
+      {hasReplies && !isCollapsed && (
+        <div className="mt-2">
+          {comment.replies.map((reply, index) => (
+            <Comment key={index} comment={reply} depth={depth + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
