@@ -6,12 +6,12 @@ interface StatsProps {
 
 export function Stats({ data }: StatsProps) {
   const stats = [
-    { label: 'Posts', value: data.stats.returnedPosts },
-    { label: 'With Comments', value: data.stats.postsWithComments },
+    { label: 'Posts (All)', value: data.stats.postsAllCnt },
+    { label: 'Posts (Filtered)', value: data.stats.postsFilteredCnt },
     { label: 'Max Comments', value: data.config.maxComments },
     { label: 'Min Score', value: data.config.minimumCommentScore },
     { label: 'Hours Back', value: `${data.config.hoursBack}h` },
-    { label: 'Source', value: data.fromCache ? 'Cache' : 'Fresh' },
+    { label: 'Source', value: data.fromCache ? `Cache (${data.cacheAgeMinutes}m)` : 'Fresh' },
   ];
 
   return (

@@ -6,17 +6,21 @@ export async function fetchRedditData(params: RedditFetchParams): Promise<Reddit
   const {
     subreddit,
     apiKey = 'secret',
-    topPostsCount = 25,
-    maxComments = 100,
-    minimumCommentScore = 1,
+    maxPosts = 10,
+    maxComments = 10,
+    minimumCommentScore = 3,
+    minimumPostScore = 5,
+    limit = 25,
   } = params;
 
   const url = new URL(API_BASE_URL);
   url.searchParams.set('subreddit', subreddit);
   url.searchParams.set('apiKey', apiKey);
-  url.searchParams.set('topPostsCount', topPostsCount.toString());
+  url.searchParams.set('maxPosts', maxPosts.toString());
   url.searchParams.set('maxComments', maxComments.toString());
   url.searchParams.set('minimumCommentScore', minimumCommentScore.toString());
+  url.searchParams.set('minimumPostScore', minimumPostScore.toString());
+  url.searchParams.set('limit', limit.toString());
 
   const response = await fetch(url.toString(), {
     next: { revalidate: 300 }, // Cache for 5 minutes

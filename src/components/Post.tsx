@@ -63,7 +63,9 @@ export function Post({ post, index }: PostProps) {
                 {post.author}
               </span>
               <span className="text-gray-500">
-                {post.numComments}
+                {post.commentsFilteredCnt}
+                /
+                {post.commentsAllCnt}
                 {' '}
                 comments
               </span>
@@ -115,7 +117,13 @@ export function Post({ post, index }: PostProps) {
                 </button>
                 <h3 className="text-base font-semibold text-gray-900">Comments</h3>
                 <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
-                  {post.comments.length}
+                  {post.commentsFilteredCnt}
+                </span>
+                <span className="text-xs text-gray-500">
+                  (
+                  {post.commentsAllCnt}
+                  {' '}
+                  total)
                 </span>
               </div>
               {!areCommentsCollapsed && (
