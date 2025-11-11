@@ -55,7 +55,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
 
   // Load custom favorites from localStorage
   useEffect(() => {
-    if (typeof window === 'undefined' || mode !== 'multi') {
+    if (typeof window === 'undefined') {
       return;
     }
 
@@ -68,7 +68,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
     } catch (error) {
       console.error('Failed to load custom favorites:', error);
     }
-  }, [mode]);
+  }, []);
 
   // Save custom favorites to localStorage
   const saveCustomFavorites = useCallback((favorites: FavoriteSubreddit[]) => {
@@ -195,21 +195,37 @@ export function ConfigForm({ mode }: ConfigFormProps) {
     );
     saveCustomFavorites(updated);
 
-    // Also uncheck if it was selected
-    const newSelected = new Set(selectedFavorites);
-    newSelected.delete(subredditName);
-    setSelectedFavorites(newSelected);
+    if (mode === 'single') {
+      // Clear subreddit field if it was selected
+      if (subreddit.toLowerCase() === subredditName.toLowerCase()) {
+        setSubreddit('');
+      }
+    } else {
+      // Also uncheck if it was selected
+      const newSelected = new Set(selectedFavorites);
+      newSelected.delete(subredditName);
+      setSelectedFavorites(newSelected);
 
-    // Update subreddits field
-    const selectedArray = Array.from(newSelected);
-    setSubreddits(selectedArray.join(', '));
+      // Update subreddits field
+      const selectedArray = Array.from(newSelected);
+      setSubreddits(selectedArray.join(', '));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Save new subreddits to localStorage on form submit
-    if (mode === 'multi' && subreddits) {
+    if (mode === 'single' && subreddit) {
+      // Check if this is a new subreddit not in allFavorites
+      if (!allFavorites.some(fav => fav.name.toLowerCase() === subreddit.toLowerCase())) {
+        const updated = [...customFavorites];
+        if (!updated.some(fav => fav.name.toLowerCase() === subreddit.toLowerCase())) {
+          updated.push({ name: subreddit, starred: false });
+          saveCustomFavorites(updated);
+        }
+      }
+    } else if (mode === 'multi' && subreddits) {
       const currentSubreddits = subreddits
         .split(',')
         .map(s => s.trim())
@@ -286,17 +302,85 @@ export function ConfigForm({ mode }: ConfigFormProps) {
       <div className="form-grid">
         {mode === 'single'
           ? (
-              <div className="form-field form-field-full">
-                <label htmlFor="subreddit">Subreddit</label>
-                <input
-                  id="subreddit"
-                  type="text"
-                  value={subreddit}
-                  onChange={e => setSubreddit(e.target.value)}
-                  placeholder="ClaudeAI"
-                  required
-                />
-              </div>
+              <>
+                <div className="form-field-full">
+                  <div className="mb-4">
+                    <div className="mb-3 text-sm font-semibold text-slate-300">
+                      Favorite Subreddits
+                      <span className="ml-2 text-xs text-slate-500">(⭐ = top of list, click to select)</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-600 bg-slate-800 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {allFavorites.map((favorite) => {
+                        const isDefault = DEFAULT_FAVORITE_SUBREDDITS.includes(favorite.name);
+                        const isCustom = customFavorites.some(fav => fav.name.toLowerCase() === favorite.name.toLowerCase());
+                        const isSelected = subreddit.toLowerCase() === favorite.name.toLowerCase();
+                        return (
+                          <div
+                            key={favorite.name}
+                            className="flex items-center gap-1.5"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setSubreddit(favorite.name)}
+                              className={`flex flex-1 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                                isSelected
+                                  ? 'bg-cyan-500/30 text-cyan-300 ring-2 ring-cyan-500'
+                                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                              }`}
+                              style={{ minHeight: '44px' }}
+                            >
+                              <span>
+                                r/
+                                {favorite.name}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleStar(favorite.name)}
+                              className={`flex-shrink-0 text-base transition-all duration-200 hover:scale-110 ${
+                                favorite.starred
+                                  ? 'text-yellow-400 hover:text-yellow-300'
+                                  : 'text-slate-600 hover:text-yellow-500'
+                              }`}
+                              title={favorite.starred ? 'Remove from top' : 'Pin to top'}
+                              aria-label={favorite.starred ? 'Unstar subreddit' : 'Star subreddit'}
+                            >
+                              {favorite.starred ? '⭐' : '☆'}
+                            </button>
+                            {isCustom && !isDefault && (
+                              <button
+                                type="button"
+                                onClick={() => removeFromFavorites(favorite.name)}
+                                className="flex-shrink-0 text-sm text-red-400 transition-all duration-200 hover:scale-110 hover:text-red-300"
+                                title="Remove from favorites"
+                                aria-label="Remove subreddit from favorites"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-field form-field-full">
+                  <label htmlFor="subreddit">
+                    Subreddit
+                    {' '}
+                    <span className="text-slate-500">(or type a new one, saved on submit)</span>
+                  </label>
+                  <input
+                    id="subreddit"
+                    type="text"
+                    value={subreddit}
+                    onChange={e => setSubreddit(e.target.value)}
+                    placeholder="ClaudeAI"
+                    required
+                  />
+                </div>
+              </>
             )
           : (
               <>
