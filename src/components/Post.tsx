@@ -1,6 +1,6 @@
 'use client';
 
-import type { RedditPost } from '@/types/reddit';
+import type { HighlightLevel, RedditPost } from '@/types/reddit';
 import { useState } from 'react';
 import { Comment } from './Comment';
 
@@ -8,6 +8,45 @@ type PostProps = {
   post: RedditPost;
   index: number;
   subredditName?: string;
+};
+
+type HighlightBadgeConfig = {
+  icon: string;
+  label: string;
+  bgColor: string;
+  textColor: string;
+  borderColor: string;
+};
+
+const getHighlightBadge = (highlight: HighlightLevel): HighlightBadgeConfig | null => {
+  switch (highlight) {
+    case 'viral':
+      return {
+        icon: '🔥',
+        label: 'VIRAL',
+        bgColor: 'bg-red-100',
+        textColor: 'text-red-800',
+        borderColor: 'border-red-300',
+      };
+    case 'hot':
+      return {
+        icon: '🔥',
+        label: 'HOT',
+        bgColor: 'bg-orange-100',
+        textColor: 'text-orange-800',
+        borderColor: 'border-orange-300',
+      };
+    case 'trending':
+      return {
+        icon: '📈',
+        label: 'TRENDING',
+        bgColor: 'bg-yellow-100',
+        textColor: 'text-yellow-800',
+        borderColor: 'border-yellow-300',
+      };
+    default:
+      return null;
+  }
 };
 
 export function Post({ post, index }: PostProps) {
@@ -26,6 +65,8 @@ export function Post({ post, index }: PostProps) {
       minute: '2-digit',
     });
   };
+
+  const highlightBadge = post.highlight ? getHighlightBadge(post.highlight) : null;
 
   return (
     <article id={`post-${index}`} className="mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -54,6 +95,12 @@ export function Post({ post, index }: PostProps) {
               </a>
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+              {highlightBadge && (
+                <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-xs font-bold ${highlightBadge.bgColor} ${highlightBadge.textColor} ${highlightBadge.borderColor}`}>
+                  <span>{highlightBadge.icon}</span>
+                  <span>{highlightBadge.label}</span>
+                </span>
+              )}
               <span className="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 font-semibold text-orange-700">
                 {post.score}
                 {' '}

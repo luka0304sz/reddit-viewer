@@ -1,9 +1,13 @@
+export type HighlightLevel = 'viral' | 'hot' | 'trending' | null;
+
 export type RedditComment = {
   author: string;
   body: string;
   score: number;
   created: string;
   replies: RedditComment[];
+  zScore?: number;
+  highlight?: HighlightLevel;
 };
 
 export type RedditPost = {
@@ -20,6 +24,7 @@ export type RedditPost = {
   commentsAllCnt: number;
   commentsFilteredCnt: number;
   zScore?: number;
+  highlight?: HighlightLevel;
   stats?: {
     commentsAllCnt: number;
     commentsFilteredCnt: number;
