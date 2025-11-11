@@ -1,14 +1,14 @@
 import type { RedditPost } from '@/types/reddit';
 
-interface PostNavigationProps {
+type PostNavigationProps = {
   posts: RedditPost[];
-}
+};
 
 export function PostNavigation({ posts }: PostNavigationProps) {
   return (
     <nav className="mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white px-4 py-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700">
+        <h3 className="text-sm font-semibold tracking-wide text-gray-700 uppercase">
           Posts Navigation
         </h3>
       </div>

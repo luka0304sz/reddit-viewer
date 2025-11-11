@@ -1,12 +1,12 @@
-export interface RedditComment {
+export type RedditComment = {
   author: string;
   body: string;
   score: number;
   created: string;
   replies: RedditComment[];
-}
+};
 
-export interface RedditPost {
+export type RedditPost = {
   title: string;
   author: string;
   score: number;
@@ -19,9 +19,23 @@ export interface RedditPost {
   comments: RedditComment[];
   commentsAllCnt: number;
   commentsFilteredCnt: number;
-}
+  zScore?: number;
+  stats?: {
+    commentsAllCnt: number;
+    commentsFilteredCnt: number;
+    commentScoreStats: ScoreStatistics;
+  };
+};
 
-export interface RedditConfig {
+export type ScoreStatistics = {
+  mean: number;
+  stdDev: number;
+  min: number;
+  max: number;
+  count: number;
+};
+
+export type RedditConfig = {
   subreddit: string;
   apiKey: string;
   topPostsCount: number;
@@ -31,14 +45,15 @@ export interface RedditConfig {
   minimumPostScore: number;
   limit: number;
   hoursBack: number;
-}
+};
 
-export interface RedditStats {
+export type RedditStats = {
   postsAllCnt: number;
   postsFilteredCnt: number;
-}
+  postScoreStats?: ScoreStatistics;
+};
 
-export interface RedditApiResponse {
+export type RedditApiResponse = {
   success: boolean;
   message?: string;
   subreddit: string;
@@ -49,9 +64,9 @@ export interface RedditApiResponse {
   cachedAt?: string;
   cacheAgeMinutes?: number;
   filePath?: string;
-}
+};
 
-export interface RedditFetchParams {
+export type RedditFetchParams = {
   subreddit: string;
   apiKey?: string;
   maxPosts?: number;
@@ -59,4 +74,48 @@ export interface RedditFetchParams {
   minimumCommentScore?: number;
   minimumPostScore?: number;
   limit?: number;
-}
+};
+
+// Multi-subreddit types
+export type MultiSubredditRequest = {
+  subreddits: string[];
+  apiKey?: string;
+  hoursBack?: number;
+  limit?: number;
+  maxPosts?: number;
+  maxComments?: number;
+  minimumPostScore?: number;
+  minimumCommentScore?: number;
+  postZScoreThreshold?: number;
+  commentZScoreThreshold?: number;
+  maxPostsLimit?: number;
+  maxCommentsLimit?: number;
+  refreshCache?: boolean;
+};
+
+export type SubredditResult = {
+  subreddit: string;
+  fromCache: boolean;
+  cachedAt: string;
+  cacheAgeMinutes: number;
+  filePath: string;
+  stats: RedditStats;
+  posts: RedditPost[];
+};
+
+export type MultiSubredditResponse = {
+  success: boolean;
+  totalSubreddits: number;
+  config: {
+    hoursBack: number;
+    limit: number;
+    maxPosts: number;
+    maxComments: number;
+    postZScoreThreshold: number;
+    commentZScoreThreshold: number;
+    maxPostsLimit: number;
+    maxCommentsLimit: number;
+    refreshCache: boolean;
+  };
+  subreddits: SubredditResult[];
+};

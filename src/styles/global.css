@@ -19,6 +19,10 @@
     @apply flex flex-col;
   }
 
+  .form-field-full {
+    @apply col-span-full;
+  }
+
   .form-field label {
     @apply mb-1 text-sm font-medium text-gray-700;
   }

@@ -3,10 +3,10 @@
 import type { RedditComment } from '@/types/reddit';
 import { useState } from 'react';
 
-interface CommentProps {
+type CommentProps = {
   comment: RedditComment;
   depth?: number;
-}
+};
 
 const BORDER_COLORS = [
   'border-orange-500',
@@ -59,7 +59,7 @@ export function Comment({ comment, depth = 0 }: CommentProps) {
             </span>
             <span className="text-xs text-gray-500">{formatDate(comment.created)}</span>
           </div>
-          <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-gray-800">
+          <p className="mt-1.5 text-sm leading-relaxed whitespace-pre-wrap text-gray-800">
             {comment.body}
           </p>
         </div>

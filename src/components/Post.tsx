@@ -4,10 +4,11 @@ import type { RedditPost } from '@/types/reddit';
 import { useState } from 'react';
 import { Comment } from './Comment';
 
-interface PostProps {
+type PostProps = {
   post: RedditPost;
   index: number;
-}
+  subredditName?: string;
+};
 
 export function Post({ post, index }: PostProps) {
   const [isContentCollapsed, setIsContentCollapsed] = useState(false);
@@ -38,7 +39,7 @@ export function Post({ post, index }: PostProps) {
             {isContentCollapsed ? '►' : '▼'}
           </button>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold leading-tight text-gray-900">
+            <h2 className="text-lg leading-tight font-semibold text-gray-900">
               <span className="mr-1.5 text-gray-400">
                 {index + 1}
                 .
@@ -58,6 +59,13 @@ export function Post({ post, index }: PostProps) {
                 {' '}
                 pts
               </span>
+              {post.zScore !== undefined && (
+                <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 font-semibold text-purple-700">
+                  z:
+                  {' '}
+                  {post.zScore.toFixed(2)}
+                </span>
+              )}
               <span className="font-medium text-gray-700">
                 u/
                 {post.author}
@@ -99,7 +107,7 @@ export function Post({ post, index }: PostProps) {
 
           {hasText && (
             <div className="border-t border-gray-100 bg-gradient-to-b from-gray-50 to-white p-4">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
                 {post.selftext}
               </p>
             </div>
