@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { ConfigForm } from '@/components/ConfigForm';
 import { Post } from '@/components/Post';
 import { PostNavigation } from '@/components/PostNavigation';
@@ -14,6 +15,7 @@ type SearchParams = {
   minimumCommentScore?: string;
   minimumPostScore?: string;
   limit?: string;
+  view?: string;
 };
 
 type PageProps = {
@@ -23,25 +25,28 @@ type PageProps = {
 export default async function HomePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const subreddit = params.subreddit || params.channel;
+  const isSimpleView = params.view === 'simple';
 
   if (!subreddit) {
     return (
       <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-4 flex justify-center gap-4">
-            <Link
-              href="/"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              Single Subreddit
-            </Link>
-            <Link
-              href="/multi"
-              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
-            >
-              Multi-Subreddit
-            </Link>
-          </div>
+          {!isSimpleView && (
+            <div className="mb-4 flex justify-center gap-4">
+              <Link
+                href="/"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                Single Subreddit
+              </Link>
+              <Link
+                href="/multi"
+                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+              >
+                Multi-Subreddit
+              </Link>
+            </div>
+          )}
 
           <header className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-gray-900">Reddit Posts Viewer</h1>
@@ -49,7 +54,8 @@ export default async function HomePage({ searchParams }: PageProps) {
               Real-time Reddit data with comments and replies
             </p>
           </header>
-          <ConfigForm mode="single" />
+
+          {!isSimpleView && <ConfigForm mode="single" />}
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -146,28 +152,48 @@ export default async function HomePage({ searchParams }: PageProps) {
     return (
       <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-4 flex justify-center gap-4">
-            <Link
-              href="/"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              Single Subreddit
-            </Link>
-            <Link
-              href="/multi"
-              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
-            >
-              Multi-Subreddit
-            </Link>
-          </div>
+          {!isSimpleView && (
+            <div className="mb-4 flex justify-center gap-4">
+              <Link
+                href="/"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                Single Subreddit
+              </Link>
+              <Link
+                href="/multi"
+                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+              >
+                Multi-Subreddit
+              </Link>
+            </div>
+          )}
 
           <header className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-gray-900">Reddit Posts Viewer</h1>
             <p className="mt-2 text-sm text-gray-600">{subtitle}</p>
           </header>
-          <ConfigForm mode="single" />
-          <SingleSubredditStats data={data} />
-          <PostNavigation posts={data.posts} />
+
+          {isSimpleView
+            ? (
+                <>
+                  <PostNavigation posts={data.posts} />
+                </>
+              )
+            : (
+                <>
+                  <CollapsibleSection title="Configuration Form" defaultCollapsed>
+                    <ConfigForm mode="single" />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection title="Statistics" defaultCollapsed>
+                    <SingleSubredditStats data={data} />
+                  </CollapsibleSection>
+
+                  <PostNavigation posts={data.posts} />
+                </>
+              )}
+
           {data.posts.map((post, index) => (
             <Post key={post.permalink} post={post} index={index} />
           ))}
@@ -178,20 +204,22 @@ export default async function HomePage({ searchParams }: PageProps) {
     return (
       <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-4 flex justify-center gap-4">
-            <Link
-              href="/"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              Single Subreddit
-            </Link>
-            <Link
-              href="/multi"
-              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
-            >
-              Multi-Subreddit
-            </Link>
-          </div>
+          {!isSimpleView && (
+            <div className="mb-4 flex justify-center gap-4">
+              <Link
+                href="/"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                Single Subreddit
+              </Link>
+              <Link
+                href="/multi"
+                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+              >
+                Multi-Subreddit
+              </Link>
+            </div>
+          )}
 
           <header className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-gray-900">Reddit Posts Viewer</h1>
@@ -200,7 +228,8 @@ export default async function HomePage({ searchParams }: PageProps) {
               {subreddit}
             </p>
           </header>
-          <ConfigForm mode="single" />
+
+          {!isSimpleView && <ConfigForm mode="single" />}
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm">
             <div className="flex">
               <div className="flex-shrink-0">

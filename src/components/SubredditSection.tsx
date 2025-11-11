@@ -1,6 +1,7 @@
 'use client';
 
 import type { SubredditResult } from '@/types/reddit';
+import Link from 'next/link';
 import { useState } from 'react';
 import { Post } from './Post';
 
@@ -15,7 +16,7 @@ export function SubredditSection({ subreddit, index }: SubredditSectionProps) {
   return (
     <div id={`subreddit-${index}`} className="mb-12">
       <div className="mb-6 rounded-lg border-2 border-orange-300 bg-orange-50 p-4 shadow-sm">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <button
             type="button"
             className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border border-orange-400 bg-white text-sm text-orange-700 transition-colors hover:bg-orange-100"
@@ -24,10 +25,18 @@ export function SubredditSection({ subreddit, index }: SubredditSectionProps) {
             {isCollapsed ? '►' : '▼'}
           </button>
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-gray-900">
-              r/
-              {subreddit.subreddit}
-            </h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-2xl font-bold text-gray-900">
+                r/
+                {subreddit.subreddit}
+              </h2>
+              <Link
+                href={`/multi?subreddits=${subreddit.subreddit}&view=simple`}
+                className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-purple-700"
+              >
+                Simple View
+              </Link>
+            </div>
             <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
               <span>
                 Posts:
