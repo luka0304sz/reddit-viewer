@@ -31,10 +31,10 @@ export function SubredditSection({ subreddit, index }: SubredditSectionProps) {
                 {subreddit.subreddit}
               </h2>
               <Link
-                href={`/?subreddit=${subreddit.subreddit}&view=simple`}
+                href={`/?subreddit=${subreddit.subreddit}`}
                 className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-purple-700"
               >
-                Simple View
+                View Single
               </Link>
             </div>
             <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
