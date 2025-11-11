@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { ConfigForm } from '@/components/ConfigForm';
 import { MultiNavigation } from '@/components/MultiNavigation';
 import { ParamDocs } from '@/components/ParamDocs';
@@ -19,6 +20,7 @@ type SearchParams = {
   commentZScoreThreshold?: string;
   maxPostsLimit?: string;
   maxCommentsLimit?: string;
+  view?: string;
 };
 
 type PageProps = {
@@ -28,25 +30,28 @@ type PageProps = {
 export default async function MultiSubredditPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const subredditsParam = params.subreddits;
+  const isSimpleView = params.view === 'simple';
 
   if (!subredditsParam) {
     return (
       <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-4 flex justify-center gap-4">
-            <Link
-              href="/"
-              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
-            >
-              Single Subreddit
-            </Link>
-            <Link
-              href="/multi"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              Multi-Subreddit
-            </Link>
-          </div>
+          {!isSimpleView && (
+            <div className="mb-4 flex justify-center gap-4">
+              <Link
+                href="/"
+                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+              >
+                Single Subreddit
+              </Link>
+              <Link
+                href="/multi"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                Multi-Subreddit
+              </Link>
+            </div>
+          )}
 
           <header className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-gray-900">Reddit Multi-Subreddit Viewer</h1>
@@ -54,8 +59,14 @@ export default async function MultiSubredditPage({ searchParams }: PageProps) {
               Intelligent content aggregation from multiple subreddits using adaptive z-score selection
             </p>
           </header>
-          <ParamDocs />
-          <ConfigForm mode="multi" />
+
+          {!isSimpleView && (
+            <>
+              <ParamDocs />
+              <ConfigForm mode="multi" />
+            </>
+          )}
+
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -121,29 +132,51 @@ export default async function MultiSubredditPage({ searchParams }: PageProps) {
     return (
       <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-4 flex justify-center gap-4">
-            <Link
-              href="/"
-              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
-            >
-              Single Subreddit
-            </Link>
-            <Link
-              href="/multi"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              Multi-Subreddit
-            </Link>
-          </div>
+          {!isSimpleView && (
+            <div className="mb-4 flex justify-center gap-4">
+              <Link
+                href="/"
+                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+              >
+                Single Subreddit
+              </Link>
+              <Link
+                href="/multi"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                Multi-Subreddit
+              </Link>
+            </div>
+          )}
 
           <header className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-gray-900">Reddit Multi-Subreddit Viewer</h1>
             <p className="mt-2 text-sm text-gray-600">{subtitle}</p>
           </header>
-          <ParamDocs />
-          <ConfigForm mode="multi" />
-          <Stats data={data} />
-          <MultiNavigation data={data} />
+
+          {isSimpleView
+            ? (
+                <>
+                  <MultiNavigation data={data} />
+                </>
+              )
+            : (
+                <>
+                  <CollapsibleSection title="Query Parameters Reference" defaultCollapsed>
+                    <ParamDocs />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection title="Configuration Form" defaultCollapsed>
+                    <ConfigForm mode="multi" />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection title="Statistics" defaultCollapsed>
+                    <Stats data={data} />
+                  </CollapsibleSection>
+
+                  <MultiNavigation data={data} />
+                </>
+              )}
 
           {data.subreddits.length === 0 && (
             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-center shadow-sm">
@@ -161,27 +194,35 @@ export default async function MultiSubredditPage({ searchParams }: PageProps) {
     return (
       <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-4 flex justify-center gap-4">
-            <Link
-              href="/"
-              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
-            >
-              Single Subreddit
-            </Link>
-            <Link
-              href="/multi"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              Multi-Subreddit
-            </Link>
-          </div>
+          {!isSimpleView && (
+            <div className="mb-4 flex justify-center gap-4">
+              <Link
+                href="/"
+                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+              >
+                Single Subreddit
+              </Link>
+              <Link
+                href="/multi"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                Multi-Subreddit
+              </Link>
+            </div>
+          )}
 
           <header className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-gray-900">Reddit Multi-Subreddit Viewer</h1>
             <p className="mt-2 text-sm text-gray-600">Error loading data</p>
           </header>
-          <ParamDocs />
-          <ConfigForm mode="multi" />
+
+          {!isSimpleView && (
+            <>
+              <ParamDocs />
+              <ConfigForm mode="multi" />
+            </>
+          )}
+
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm">
             <div className="flex">
               <div className="flex-shrink-0">
