@@ -174,28 +174,12 @@ export function ConfigForm({ mode }: ConfigFormProps) {
   const handleSubredditsChange = (value: string) => {
     setSubreddits(value);
 
-    // Parse subreddits and add new ones to custom favorites
+    // Update checkboxes based on manual input (no save yet)
     const currentSubreddits = value
       .split(',')
       .map(s => s.trim())
       .filter(Boolean);
 
-    // Find new subreddits not in allFavorites
-    const newSubreddits = currentSubreddits.filter(
-      sub => !allFavorites.some(fav => fav.name.toLowerCase() === sub.toLowerCase()),
-    );
-
-    if (newSubreddits.length > 0) {
-      const updated = [...customFavorites];
-      newSubreddits.forEach((sub) => {
-        if (!updated.some(fav => fav.name.toLowerCase() === sub.toLowerCase())) {
-          updated.push({ name: sub, starred: false });
-        }
-      });
-      saveCustomFavorites(updated);
-    }
-
-    // Update checkboxes based on manual input
     const selected = new Set(
       currentSubreddits.filter(s =>
         allFavorites.some(fav => fav.name.toLowerCase() === s.toLowerCase()),
@@ -204,8 +188,48 @@ export function ConfigForm({ mode }: ConfigFormProps) {
     setSelectedFavorites(selected);
   };
 
+  const removeFromFavorites = (subredditName: string) => {
+    // Remove from custom favorites
+    const updated = customFavorites.filter(
+      fav => fav.name.toLowerCase() !== subredditName.toLowerCase(),
+    );
+    saveCustomFavorites(updated);
+
+    // Also uncheck if it was selected
+    const newSelected = new Set(selectedFavorites);
+    newSelected.delete(subredditName);
+    setSelectedFavorites(newSelected);
+
+    // Update subreddits field
+    const selectedArray = Array.from(newSelected);
+    setSubreddits(selectedArray.join(', '));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Save new subreddits to localStorage on form submit
+    if (mode === 'multi' && subreddits) {
+      const currentSubreddits = subreddits
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      // Find new subreddits not in allFavorites
+      const newSubreddits = currentSubreddits.filter(
+        sub => !allFavorites.some(fav => fav.name.toLowerCase() === sub.toLowerCase()),
+      );
+
+      if (newSubreddits.length > 0) {
+        const updated = [...customFavorites];
+        newSubreddits.forEach((sub) => {
+          if (!updated.some(fav => fav.name.toLowerCase() === sub.toLowerCase())) {
+            updated.push({ name: sub, starred: false });
+          }
+        });
+        saveCustomFavorites(updated);
+      }
+    }
 
     const params = new URLSearchParams();
 
@@ -292,39 +316,54 @@ export function ConfigForm({ mode }: ConfigFormProps) {
                         {selectedFavorites.size === allFavorites.length ? 'Deselect All' : 'Select All'}
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-600 bg-slate-800 p-4 sm:grid-cols-3 lg:grid-cols-5">
-                      {allFavorites.map(favorite => (
-                        <div
-                          key={favorite.name}
-                          className="flex items-center gap-1.5"
-                        >
-                          <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={selectedFavorites.has(favorite.name)}
-                              onChange={() => toggleFavorite(favorite.name)}
-                              className="h-5 w-5 rounded border-slate-600 bg-slate-800 text-cyan-500 transition-all focus:ring-2 focus:ring-cyan-500/50"
-                            />
-                            <span className="font-medium text-slate-300">
-                              r/
-                              {favorite.name}
-                            </span>
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => toggleStar(favorite.name)}
-                            className={`flex-shrink-0 text-base transition-all duration-200 hover:scale-110 ${
-                              favorite.starred
-                                ? 'text-yellow-400 hover:text-yellow-300'
-                                : 'text-slate-600 hover:text-yellow-500'
-                            }`}
-                            title={favorite.starred ? 'Remove from top' : 'Pin to top'}
-                            aria-label={favorite.starred ? 'Unstar subreddit' : 'Star subreddit'}
+                    <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-600 bg-slate-800 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {allFavorites.map((favorite) => {
+                        const isDefault = DEFAULT_FAVORITE_SUBREDDITS.includes(favorite.name);
+                        const isCustom = customFavorites.some(fav => fav.name.toLowerCase() === favorite.name.toLowerCase());
+                        return (
+                          <div
+                            key={favorite.name}
+                            className="flex items-center gap-1.5"
                           >
-                            {favorite.starred ? '⭐' : '☆'}
-                          </button>
-                        </div>
-                      ))}
+                            <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={selectedFavorites.has(favorite.name)}
+                                onChange={() => toggleFavorite(favorite.name)}
+                                className="h-5 w-5 rounded border-slate-600 bg-slate-800 text-cyan-500 transition-all focus:ring-2 focus:ring-cyan-500/50"
+                              />
+                              <span className="font-medium text-slate-300">
+                                r/
+                                {favorite.name}
+                              </span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => toggleStar(favorite.name)}
+                              className={`flex-shrink-0 text-base transition-all duration-200 hover:scale-110 ${
+                                favorite.starred
+                                  ? 'text-yellow-400 hover:text-yellow-300'
+                                  : 'text-slate-600 hover:text-yellow-500'
+                              }`}
+                              title={favorite.starred ? 'Remove from top' : 'Pin to top'}
+                              aria-label={favorite.starred ? 'Unstar subreddit' : 'Star subreddit'}
+                            >
+                              {favorite.starred ? '⭐' : '☆'}
+                            </button>
+                            {isCustom && !isDefault && (
+                              <button
+                                type="button"
+                                onClick={() => removeFromFavorites(favorite.name)}
+                                className="flex-shrink-0 text-sm text-red-400 transition-all duration-200 hover:scale-110 hover:text-red-300"
+                                title="Remove from favorites"
+                                aria-label="Remove subreddit from favorites"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -333,7 +372,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
                   <label htmlFor="subreddits">
                     Subreddits
                     {' '}
-                    <span className="text-slate-500">(comma-separated, new ones saved automatically)</span>
+                    <span className="text-slate-500">(comma-separated, new ones saved on submit)</span>
                   </label>
                   <input
                     id="subreddits"
