@@ -1,20 +1,8 @@
-import type { HighlightLevel, RedditPost } from '@/types/reddit';
+import type { RedditPost } from '@/types/reddit';
+import { getHighlightIcon } from '@/utils/highlight';
 
 type PostNavigationProps = {
   posts: RedditPost[];
-};
-
-const getHighlightIcon = (highlight: HighlightLevel): string | null => {
-  switch (highlight) {
-    case 'viral':
-      return '🔥';
-    case 'hot':
-      return '🔥';
-    case 'trending':
-      return '📈';
-    default:
-      return null;
-  }
 };
 
 export function PostNavigation({ posts }: PostNavigationProps) {

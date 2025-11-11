@@ -1,23 +1,11 @@
 'use client';
 
-import type { HighlightLevel, MultiSubredditResponse } from '@/types/reddit';
+import type { MultiSubredditResponse } from '@/types/reddit';
+import { getHighlightIcon } from '@/utils/highlight';
 import { useState } from 'react';
 
 type MultiNavigationProps = {
   data: MultiSubredditResponse;
-};
-
-const getHighlightIcon = (highlight: HighlightLevel): string | null => {
-  switch (highlight) {
-    case 'viral':
-      return '🔥';
-    case 'hot':
-      return '🔥';
-    case 'trending':
-      return '📈';
-    default:
-      return null;
-  }
 };
 
 export function MultiNavigation({ data }: MultiNavigationProps) {

@@ -1,6 +1,7 @@
 'use client';
 
-import type { HighlightLevel, RedditComment } from '@/types/reddit';
+import type { RedditComment } from '@/types/reddit';
+import { getHighlightBadge } from '@/utils/highlight';
 import { useState } from 'react';
 
 type CommentProps = {
@@ -15,45 +16,6 @@ const BORDER_COLORS = [
   'border-amber-500',
   'border-purple-500',
 ];
-
-type HighlightBadgeConfig = {
-  icon: string;
-  label: string;
-  bgColor: string;
-  textColor: string;
-  borderColor: string;
-};
-
-const getHighlightBadge = (highlight: HighlightLevel): HighlightBadgeConfig | null => {
-  switch (highlight) {
-    case 'viral':
-      return {
-        icon: '🔥',
-        label: 'VIRAL',
-        bgColor: 'bg-red-100',
-        textColor: 'text-red-800',
-        borderColor: 'border-red-300',
-      };
-    case 'hot':
-      return {
-        icon: '🔥',
-        label: 'HOT',
-        bgColor: 'bg-orange-100',
-        textColor: 'text-orange-800',
-        borderColor: 'border-orange-300',
-      };
-    case 'trending':
-      return {
-        icon: '📈',
-        label: 'TRENDING',
-        bgColor: 'bg-yellow-100',
-        textColor: 'text-yellow-800',
-        borderColor: 'border-yellow-300',
-      };
-    default:
-      return null;
-  }
-};
 
 export function Comment({ comment, depth = 0 }: CommentProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
