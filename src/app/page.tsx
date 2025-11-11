@@ -1,22 +1,19 @@
+import Link from 'next/link';
 import { ConfigForm } from '@/components/ConfigForm';
-import { ParamDocs } from '@/components/ParamDocs';
 import { Post } from '@/components/Post';
-import { Stats } from '@/components/Stats';
-import { fetchMultiSubredditData } from '@/services/reddit';
+import { PostNavigation } from '@/components/PostNavigation';
+import { SingleSubredditStats } from '@/components/SingleSubredditStats';
+import { fetchRedditData } from '@/services/reddit';
 
 type SearchParams = {
-  subreddits?: string;
+  subreddit?: string;
+  channel?: string;
   apiKey?: string;
-  hoursBack?: string;
-  limit?: string;
   maxPosts?: string;
   maxComments?: string;
-  minimumPostScore?: string;
   minimumCommentScore?: string;
-  postZScoreThreshold?: string;
-  commentZScoreThreshold?: string;
-  maxPostsLimit?: string;
-  maxCommentsLimit?: string;
+  minimumPostScore?: string;
+  limit?: string;
 };
 
 type PageProps = {
@@ -25,20 +22,34 @@ type PageProps = {
 
 export default async function HomePage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const subredditsParam = params.subreddits;
+  const subreddit = params.subreddit || params.channel;
 
-  if (!subredditsParam) {
+  if (!subreddit) {
     return (
       <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-4 flex justify-center gap-4">
+            <Link
+              href="/"
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+            >
+              Single Subreddit
+            </Link>
+            <Link
+              href="/multi"
+              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+            >
+              Multi-Subreddit
+            </Link>
+          </div>
+
           <header className="mb-8 text-center">
-            <h1 className="text-4xl font-bold text-gray-900">Reddit Multi-Subreddit Viewer</h1>
+            <h1 className="text-4xl font-bold text-gray-900">Reddit Posts Viewer</h1>
             <p className="mt-2 text-sm text-gray-600">
-              Intelligent content aggregation from multiple subreddits using adaptive z-score selection
+              Real-time Reddit data with comments and replies
             </p>
           </header>
-          <ParamDocs />
-          <ConfigForm />
+          <ConfigForm mode="single" />
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -51,7 +62,11 @@ export default async function HomePage({ searchParams }: PageProps) {
                 <p className="mt-2 text-sm text-red-700">
                   Required parameter missing:
                   {' '}
-                  <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">subreddits</code>
+                  <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">subreddit</code>
+                  {' '}
+                  or
+                  {' '}
+                  <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">channel</code>
                 </p>
                 <div className="mt-4">
                   <p className="text-sm font-medium text-red-800">Usage:</p>
@@ -59,14 +74,52 @@ export default async function HomePage({ searchParams }: PageProps) {
                     Add
                     {' '}
                     <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs">
-                      ?subreddits=SUBREDDIT1,SUBREDDIT2
+                      ?subreddit=SUBREDDIT_NAME
                     </code>
                     {' '}
                     to the URL
                   </p>
+                  <p className="mt-2 text-sm font-medium text-red-800">Available Parameters:</p>
+                  <ul className="mt-1 list-inside list-disc text-xs text-red-700">
+                    <li>
+                      <code className="rounded bg-red-100 px-1 py-0.5 font-mono">subreddit</code>
+                      {' '}
+                      - Subreddit name (required)
+                    </li>
+                    <li>
+                      <code className="rounded bg-red-100 px-1 py-0.5 font-mono">apiKey</code>
+                      {' '}
+                      - API key (default: secret)
+                    </li>
+                    <li>
+                      <code className="rounded bg-red-100 px-1 py-0.5 font-mono">maxPosts</code>
+                      {' '}
+                      - Max posts to fetch (default: 10)
+                    </li>
+                    <li>
+                      <code className="rounded bg-red-100 px-1 py-0.5 font-mono">maxComments</code>
+                      {' '}
+                      - Max comments per post (default: 10)
+                    </li>
+                    <li>
+                      <code className="rounded bg-red-100 px-1 py-0.5 font-mono">minimumCommentScore</code>
+                      {' '}
+                      - Min comment score (default: 3)
+                    </li>
+                    <li>
+                      <code className="rounded bg-red-100 px-1 py-0.5 font-mono">minimumPostScore</code>
+                      {' '}
+                      - Min post score (default: 5)
+                    </li>
+                    <li>
+                      <code className="rounded bg-red-100 px-1 py-0.5 font-mono">limit</code>
+                      {' '}
+                      - Limit (default: 25)
+                    </li>
+                  </ul>
                   <p className="mt-3 text-sm font-medium text-red-800">Example:</p>
                   <code className="mt-1 block rounded bg-red-100 px-3 py-2 font-mono text-xs text-red-700">
-                    ?subreddits=ClaudeAI,programming,linux&maxPosts=2&maxComments=10
+                    ?subreddit=ClaudeAI&maxPosts=10&maxComments=10&minimumCommentScore=3&minimumPostScore=5&limit=25&apiKey=secret
                   </code>
                 </div>
               </div>
@@ -78,98 +131,45 @@ export default async function HomePage({ searchParams }: PageProps) {
   }
 
   try {
-    const subreddits = subredditsParam.split(',').map(s => s.trim()).filter(Boolean);
-
-    if (subreddits.length === 0) {
-      throw new Error('No valid subreddits provided');
-    }
-
-    const data = await fetchMultiSubredditData({
-      subreddits,
+    const data = await fetchRedditData({
+      subreddit,
       apiKey: params.apiKey,
-      hoursBack: params.hoursBack ? Number.parseInt(params.hoursBack, 10) : undefined,
-      limit: params.limit ? Number.parseInt(params.limit, 10) : undefined,
       maxPosts: params.maxPosts ? Number.parseInt(params.maxPosts, 10) : undefined,
       maxComments: params.maxComments ? Number.parseInt(params.maxComments, 10) : undefined,
-      minimumPostScore: params.minimumPostScore ? Number.parseInt(params.minimumPostScore, 10) : undefined,
       minimumCommentScore: params.minimumCommentScore ? Number.parseInt(params.minimumCommentScore, 10) : undefined,
-      postZScoreThreshold: params.postZScoreThreshold ? Number.parseFloat(params.postZScoreThreshold) : undefined,
-      commentZScoreThreshold: params.commentZScoreThreshold ? Number.parseFloat(params.commentZScoreThreshold) : undefined,
-      maxPostsLimit: params.maxPostsLimit ? Number.parseInt(params.maxPostsLimit, 10) : undefined,
-      maxCommentsLimit: params.maxCommentsLimit ? Number.parseInt(params.maxCommentsLimit, 10) : undefined,
+      minimumPostScore: params.minimumPostScore ? Number.parseInt(params.minimumPostScore, 10) : undefined,
+      limit: params.limit ? Number.parseInt(params.limit, 10) : undefined,
     });
 
-    const subtitle = `${data.totalSubreddits} subreddits · ${data.config.hoursBack}h back · ${data.config.maxPosts} base posts · ${data.config.maxComments} base comments · z-score ≥${data.config.postZScoreThreshold}`;
+    const subtitle = `${data.config.maxPosts} posts · ${data.config.maxComments} max comments · min comment score ${data.config.minimumCommentScore} · min post score ${data.config.minimumPostScore} · limit ${data.config.limit}`;
 
     return (
       <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-4 flex justify-center gap-4">
+            <Link
+              href="/"
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+            >
+              Single Subreddit
+            </Link>
+            <Link
+              href="/multi"
+              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+            >
+              Multi-Subreddit
+            </Link>
+          </div>
+
           <header className="mb-8 text-center">
-            <h1 className="text-4xl font-bold text-gray-900">Reddit Multi-Subreddit Viewer</h1>
+            <h1 className="text-4xl font-bold text-gray-900">Reddit Posts Viewer</h1>
             <p className="mt-2 text-sm text-gray-600">{subtitle}</p>
           </header>
-          <ParamDocs />
-          <ConfigForm />
-          <Stats data={data} />
-
-          {data.subreddits.length === 0 && (
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-center shadow-sm">
-              <p className="text-yellow-800">No posts found matching the criteria.</p>
-            </div>
-          )}
-
-          {data.subreddits.map((subreddit, srIndex) => (
-            <div key={subreddit.subreddit} className="mb-12">
-              <div className="mb-6 rounded-lg border-2 border-orange-300 bg-orange-50 p-4 shadow-sm">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  r/
-                  {subreddit.subreddit}
-                </h2>
-                <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
-                  <span>
-                    Posts:
-                    {' '}
-                    <strong>{subreddit.posts.length}</strong>
-                    {' '}
-                    /
-                    {' '}
-                    {subreddit.stats.postsAllCnt}
-                  </span>
-                  <span>
-                    {subreddit.fromCache ? `Cached (${subreddit.cacheAgeMinutes}m ago)` : 'Fresh'}
-                  </span>
-                  {subreddit.stats.postScoreStats && (
-                    <>
-                      <span>
-                        Avg Score:
-                        {' '}
-                        {subreddit.stats.postScoreStats.mean.toFixed(1)}
-                      </span>
-                      <span>
-                        StdDev:
-                        {' '}
-                        {subreddit.stats.postScoreStats.stdDev.toFixed(1)}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {subreddit.posts.length === 0 && (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center shadow-sm">
-                  <p className="text-gray-600">No posts found for this subreddit.</p>
-                </div>
-              )}
-
-              {subreddit.posts.map((post, postIndex) => (
-                <Post
-                  key={post.permalink}
-                  post={post}
-                  index={srIndex * 1000 + postIndex}
-                  subredditName={subreddit.subreddit}
-                />
-              ))}
-            </div>
+          <ConfigForm mode="single" />
+          <SingleSubredditStats data={data} />
+          <PostNavigation posts={data.posts} />
+          {data.posts.map((post, index) => (
+            <Post key={post.permalink} post={post} index={index} />
           ))}
         </div>
       </div>
@@ -177,13 +177,30 @@ export default async function HomePage({ searchParams }: PageProps) {
   } catch (error) {
     return (
       <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-4 flex justify-center gap-4">
+            <Link
+              href="/"
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+            >
+              Single Subreddit
+            </Link>
+            <Link
+              href="/multi"
+              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
+            >
+              Multi-Subreddit
+            </Link>
+          </div>
+
           <header className="mb-8 text-center">
-            <h1 className="text-4xl font-bold text-gray-900">Reddit Multi-Subreddit Viewer</h1>
-            <p className="mt-2 text-sm text-gray-600">Error loading data</p>
+            <h1 className="text-4xl font-bold text-gray-900">Reddit Posts Viewer</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              r/
+              {subreddit}
+            </p>
           </header>
-          <ParamDocs />
-          <ConfigForm />
+          <ConfigForm mode="single" />
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -197,7 +214,7 @@ export default async function HomePage({ searchParams }: PageProps) {
                   {error instanceof Error ? error.message : 'Unknown error occurred'}
                 </p>
                 <p className="mt-4 text-sm text-red-700">
-                  Please try again or check the subreddit names.
+                  Please try again or check the subreddit name.
                 </p>
               </div>
             </div>

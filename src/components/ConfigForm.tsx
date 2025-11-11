@@ -1,37 +1,69 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
-export function ConfigForm() {
+type ConfigFormProps = {
+  mode: 'single' | 'multi';
+};
+
+export function ConfigForm({ mode }: ConfigFormProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Single subreddit mode state
+  const [subreddit, setSubreddit] = useState(searchParams.get('subreddit') || searchParams.get('channel') || '');
+
+  // Multi-subreddit mode state
   const [subreddits, setSubreddits] = useState(searchParams.get('subreddits') || '');
-  const [apiKey, setApiKey] = useState(searchParams.get('apiKey') || 'secret');
   const [hoursBack, setHoursBack] = useState(searchParams.get('hoursBack') || '24');
-  const [limit, setLimit] = useState(searchParams.get('limit') || '10');
-  const [maxPosts, setMaxPosts] = useState(searchParams.get('maxPosts') || '2');
-  const [maxComments, setMaxComments] = useState(searchParams.get('maxComments') || '10');
-  const [minimumPostScore, setMinimumPostScore] = useState(searchParams.get('minimumPostScore') || '');
-  const [minimumCommentScore, setMinimumCommentScore] = useState(searchParams.get('minimumCommentScore') || '');
   const [postZScoreThreshold, setPostZScoreThreshold] = useState(searchParams.get('postZScoreThreshold') || '0.7');
   const [commentZScoreThreshold, setCommentZScoreThreshold] = useState(searchParams.get('commentZScoreThreshold') || '0.7');
   const [maxPostsLimit, setMaxPostsLimit] = useState(searchParams.get('maxPostsLimit') || '5');
   const [maxCommentsLimit, setMaxCommentsLimit] = useState(searchParams.get('maxCommentsLimit') || '20');
 
+  // Common state
+  const [apiKey, setApiKey] = useState(searchParams.get('apiKey') || 'secret');
+  const [limit, setLimit] = useState(searchParams.get('limit') || mode === 'single' ? '25' : '10');
+  const [maxPosts, setMaxPosts] = useState(searchParams.get('maxPosts') || mode === 'single' ? '10' : '2');
+  const [maxComments, setMaxComments] = useState(searchParams.get('maxComments') || '10');
+  const [minimumPostScore, setMinimumPostScore] = useState(searchParams.get('minimumPostScore') || mode === 'single' ? '5' : '');
+  const [minimumCommentScore, setMinimumCommentScore] = useState(searchParams.get('minimumCommentScore') || mode === 'single' ? '3' : '');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const params = new URLSearchParams();
-    if (subreddits) {
-      params.set('subreddits', subreddits);
+
+    if (mode === 'single') {
+      if (subreddit) {
+        params.set('subreddit', subreddit);
+      }
+    } else {
+      if (subreddits) {
+        params.set('subreddits', subreddits);
+      }
+      if (hoursBack) {
+        params.set('hoursBack', hoursBack);
+      }
+      if (postZScoreThreshold) {
+        params.set('postZScoreThreshold', postZScoreThreshold);
+      }
+      if (commentZScoreThreshold) {
+        params.set('commentZScoreThreshold', commentZScoreThreshold);
+      }
+      if (maxPostsLimit) {
+        params.set('maxPostsLimit', maxPostsLimit);
+      }
+      if (maxCommentsLimit) {
+        params.set('maxCommentsLimit', maxCommentsLimit);
+      }
     }
+
+    // Common params
     if (apiKey) {
       params.set('apiKey', apiKey);
-    }
-    if (hoursBack) {
-      params.set('hoursBack', hoursBack);
     }
     if (limit) {
       params.set('limit', limit);
@@ -48,40 +80,44 @@ export function ConfigForm() {
     if (minimumCommentScore) {
       params.set('minimumCommentScore', minimumCommentScore);
     }
-    if (postZScoreThreshold) {
-      params.set('postZScoreThreshold', postZScoreThreshold);
-    }
-    if (commentZScoreThreshold) {
-      params.set('commentZScoreThreshold', commentZScoreThreshold);
-    }
-    if (maxPostsLimit) {
-      params.set('maxPostsLimit', maxPostsLimit);
-    }
-    if (maxCommentsLimit) {
-      params.set('maxCommentsLimit', maxCommentsLimit);
-    }
 
-    router.push(`/?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   return (
     <form onSubmit={handleSubmit} className="config-form">
       <div className="form-grid">
-        <div className="form-field form-field-full">
-          <label htmlFor="subreddits">
-            Subreddits
-            {' '}
-            <span className="text-gray-500">(comma-separated)</span>
-          </label>
-          <input
-            id="subreddits"
-            type="text"
-            value={subreddits}
-            onChange={e => setSubreddits(e.target.value)}
-            placeholder="ClaudeAI, programming, linux"
-            required
-          />
-        </div>
+        {mode === 'single'
+          ? (
+              <div className="form-field form-field-full">
+                <label htmlFor="subreddit">Subreddit</label>
+                <input
+                  id="subreddit"
+                  type="text"
+                  value={subreddit}
+                  onChange={e => setSubreddit(e.target.value)}
+                  placeholder="ClaudeAI"
+                  required
+                />
+              </div>
+            )
+          : (
+              <div className="form-field form-field-full">
+                <label htmlFor="subreddits">
+                  Subreddits
+                  {' '}
+                  <span className="text-gray-500">(comma-separated)</span>
+                </label>
+                <input
+                  id="subreddits"
+                  type="text"
+                  value={subreddits}
+                  onChange={e => setSubreddits(e.target.value)}
+                  placeholder="ClaudeAI, programming, linux"
+                  required
+                />
+              </div>
+            )}
 
         <div className="form-field">
           <label htmlFor="apiKey">API Key</label>
@@ -94,17 +130,19 @@ export function ConfigForm() {
           />
         </div>
 
-        <div className="form-field">
-          <label htmlFor="hoursBack">Hours Back</label>
-          <input
-            id="hoursBack"
-            type="number"
-            value={hoursBack}
-            onChange={e => setHoursBack(e.target.value)}
-            min="1"
-            max="168"
-          />
-        </div>
+        {mode === 'multi' && (
+          <div className="form-field">
+            <label htmlFor="hoursBack">Hours Back</label>
+            <input
+              id="hoursBack"
+              type="number"
+              value={hoursBack}
+              onChange={e => setHoursBack(e.target.value)}
+              min="1"
+              max="168"
+            />
+          </div>
+        )}
 
         <div className="form-field">
           <label htmlFor="limit">Limit</label>
@@ -119,84 +157,92 @@ export function ConfigForm() {
         </div>
 
         <div className="form-field">
-          <label htmlFor="maxPosts">Max Posts (Base)</label>
+          <label htmlFor="maxPosts">
+            {mode === 'multi' ? 'Max Posts (Base)' : 'Max Posts'}
+          </label>
           <input
             id="maxPosts"
             type="number"
             value={maxPosts}
             onChange={e => setMaxPosts(e.target.value)}
             min="1"
-            max="20"
+            max={mode === 'single' ? '100' : '20'}
           />
         </div>
 
         <div className="form-field">
-          <label htmlFor="maxComments">Max Comments (Base)</label>
+          <label htmlFor="maxComments">
+            {mode === 'multi' ? 'Max Comments (Base)' : 'Max Comments'}
+          </label>
           <input
             id="maxComments"
             type="number"
             value={maxComments}
             onChange={e => setMaxComments(e.target.value)}
             min="1"
-            max="100"
+            max={mode === 'single' ? '500' : '100'}
           />
         </div>
 
-        <div className="form-field">
-          <label htmlFor="maxPostsLimit">Max Posts Limit</label>
-          <input
-            id="maxPostsLimit"
-            type="number"
-            value={maxPostsLimit}
-            onChange={e => setMaxPostsLimit(e.target.value)}
-            min="1"
-            max="50"
-          />
-        </div>
+        {mode === 'multi' && (
+          <>
+            <div className="form-field">
+              <label htmlFor="maxPostsLimit">Max Posts Limit</label>
+              <input
+                id="maxPostsLimit"
+                type="number"
+                value={maxPostsLimit}
+                onChange={e => setMaxPostsLimit(e.target.value)}
+                min="1"
+                max="50"
+              />
+            </div>
 
-        <div className="form-field">
-          <label htmlFor="maxCommentsLimit">Max Comments Limit</label>
-          <input
-            id="maxCommentsLimit"
-            type="number"
-            value={maxCommentsLimit}
-            onChange={e => setMaxCommentsLimit(e.target.value)}
-            min="1"
-            max="200"
-          />
-        </div>
+            <div className="form-field">
+              <label htmlFor="maxCommentsLimit">Max Comments Limit</label>
+              <input
+                id="maxCommentsLimit"
+                type="number"
+                value={maxCommentsLimit}
+                onChange={e => setMaxCommentsLimit(e.target.value)}
+                min="1"
+                max="200"
+              />
+            </div>
 
-        <div className="form-field">
-          <label htmlFor="postZScoreThreshold">Post Z-Score Threshold</label>
-          <input
-            id="postZScoreThreshold"
-            type="number"
-            step="0.1"
-            value={postZScoreThreshold}
-            onChange={e => setPostZScoreThreshold(e.target.value)}
-            min="0"
-            max="3"
-          />
-        </div>
+            <div className="form-field">
+              <label htmlFor="postZScoreThreshold">Post Z-Score Threshold</label>
+              <input
+                id="postZScoreThreshold"
+                type="number"
+                step="0.1"
+                value={postZScoreThreshold}
+                onChange={e => setPostZScoreThreshold(e.target.value)}
+                min="0"
+                max="3"
+              />
+            </div>
 
-        <div className="form-field">
-          <label htmlFor="commentZScoreThreshold">Comment Z-Score Threshold</label>
-          <input
-            id="commentZScoreThreshold"
-            type="number"
-            step="0.1"
-            value={commentZScoreThreshold}
-            onChange={e => setCommentZScoreThreshold(e.target.value)}
-            min="0"
-            max="3"
-          />
-        </div>
+            <div className="form-field">
+              <label htmlFor="commentZScoreThreshold">Comment Z-Score Threshold</label>
+              <input
+                id="commentZScoreThreshold"
+                type="number"
+                step="0.1"
+                value={commentZScoreThreshold}
+                onChange={e => setCommentZScoreThreshold(e.target.value)}
+                min="0"
+                max="3"
+              />
+            </div>
+          </>
+        )}
 
         <div className="form-field">
           <label htmlFor="minimumPostScore">
             Min Post Score
             {' '}
-            <span className="text-gray-500">(optional)</span>
+            {mode === 'multi' && <span className="text-gray-500">(optional)</span>}
           </label>
           <input
             id="minimumPostScore"
@@ -204,7 +250,7 @@ export function ConfigForm() {
             value={minimumPostScore}
             onChange={e => setMinimumPostScore(e.target.value)}
             min="0"
-            placeholder="Leave empty for none"
+            placeholder={mode === 'multi' ? 'Leave empty for none' : '5'}
           />
         </div>
 
@@ -212,7 +258,7 @@ export function ConfigForm() {
           <label htmlFor="minimumCommentScore">
             Min Comment Score
             {' '}
-            <span className="text-gray-500">(optional)</span>
+            {mode === 'multi' && <span className="text-gray-500">(optional)</span>}
           </label>
           <input
             id="minimumCommentScore"
@@ -220,7 +266,7 @@ export function ConfigForm() {
             value={minimumCommentScore}
             onChange={e => setMinimumCommentScore(e.target.value)}
             min="0"
-            placeholder="Leave empty for none"
+            placeholder={mode === 'multi' ? 'Leave empty for none' : '3'}
           />
         </div>
       </div>
