@@ -180,32 +180,33 @@ export function ConfigForm({ mode }: ConfigFormProps) {
           : (
               <>
                 <div className="form-field-full">
-                  <div className="mb-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <div className="text-sm font-medium text-gray-700">
+                  <div className="mb-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="text-sm font-semibold text-slate-300">
                         Favorite Subreddits
                       </div>
                       <button
                         type="button"
                         onClick={toggleSelectAll}
-                        className="rounded-md bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-200"
+                        className="rounded-lg bg-cyan-500/20 px-4 py-2 text-xs font-bold text-cyan-400 ring-1 ring-cyan-500/30 transition-all duration-200 hover:bg-cyan-500/30"
+                        style={{ minHeight: '36px' }}
                       >
                         {selectedFavorites.size === FAVORITE_SUBREDDITS.length ? 'Deselect All' : 'Select All'}
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 rounded-md border border-gray-300 bg-gray-50 p-3 sm:grid-cols-3 lg:grid-cols-5">
+                    <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-600 bg-slate-800 p-4 sm:grid-cols-3 lg:grid-cols-5">
                       {FAVORITE_SUBREDDITS.map(subreddit => (
                         <label
                           key={subreddit}
-                          className="flex cursor-pointer items-center gap-2 text-sm"
+                          className="flex cursor-pointer items-center gap-2.5 text-sm"
                         >
                           <input
                             type="checkbox"
                             checked={selectedFavorites.has(subreddit)}
                             onChange={() => toggleFavorite(subreddit)}
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                            className="h-5 w-5 rounded border-slate-600 bg-slate-800 text-cyan-500 transition-all focus:ring-2 focus:ring-cyan-500/50"
                           />
-                          <span className="text-gray-700">
+                          <span className="font-medium text-slate-300">
                             r/
                             {subreddit}
                           </span>

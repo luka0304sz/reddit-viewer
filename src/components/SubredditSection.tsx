@@ -15,33 +15,35 @@ export function SubredditSection({ subreddit, index }: SubredditSectionProps) {
 
   return (
     <div id={`subreddit-${index}`} className="mb-12">
-      <div className="mb-6 rounded-lg border-2 border-orange-300 bg-orange-50 p-4 shadow-sm">
-        <div className="flex items-start gap-3">
+      <div className="mb-6 rounded-xl border-2 border-orange-500/40 bg-orange-500/10 p-5 shadow-xl">
+        <div className="flex items-start gap-4">
           <button
             type="button"
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border border-orange-400 bg-white text-sm text-orange-700 transition-colors hover:bg-orange-100"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-orange-500/50 bg-slate-800 text-sm text-orange-400 transition-all duration-200 hover:border-orange-400 hover:bg-slate-700"
             onClick={() => setIsCollapsed(!isCollapsed)}
+            aria-label={isCollapsed ? 'Expand subreddit' : 'Collapse subreddit'}
           >
             {isCollapsed ? '►' : '▼'}
           </button>
           <div className="flex-1">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-2xl font-bold text-gray-900">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-2xl font-bold text-slate-100 sm:text-3xl">
                 r/
                 {subreddit.subreddit}
               </h2>
               <Link
                 href={`/?subreddit=${subreddit.subreddit}`}
-                className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-purple-700"
+                className="rounded-lg bg-purple-500/20 px-4 py-2 text-sm font-bold text-purple-400 ring-1 ring-purple-500/30 transition-all duration-200 hover:bg-purple-500/30"
+                style={{ minHeight: '36px' }}
               >
                 View Single
               </Link>
             </div>
-            <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
+            <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-400">
               <span>
                 Posts:
                 {' '}
-                <strong>{subreddit.posts.length}</strong>
+                <strong className="text-slate-200">{subreddit.posts.length}</strong>
                 {' '}
                 /
                 {' '}
@@ -55,12 +57,12 @@ export function SubredditSection({ subreddit, index }: SubredditSectionProps) {
                   <span>
                     Avg Score:
                     {' '}
-                    {subreddit.stats.postScoreStats.mean.toFixed(1)}
+                    <strong className="text-slate-200">{subreddit.stats.postScoreStats.mean.toFixed(1)}</strong>
                   </span>
                   <span>
                     StdDev:
                     {' '}
-                    {subreddit.stats.postScoreStats.stdDev.toFixed(1)}
+                    <strong className="text-slate-200">{subreddit.stats.postScoreStats.stdDev.toFixed(1)}</strong>
                   </span>
                 </>
               )}
@@ -72,8 +74,8 @@ export function SubredditSection({ subreddit, index }: SubredditSectionProps) {
       {!isCollapsed && (
         <>
           {subreddit.posts.length === 0 && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center shadow-sm">
-              <p className="text-gray-600">No posts found for this subreddit.</p>
+            <div className="rounded-xl border border-slate-700 bg-slate-900 p-6 text-center shadow-xl">
+              <p className="text-slate-400">No posts found for this subreddit.</p>
             </div>
           )}
 

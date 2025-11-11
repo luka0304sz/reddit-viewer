@@ -1,8 +1,8 @@
 'use client';
 
 import type { RedditPost } from '@/types/reddit';
-import { getHighlightBadge } from '@/utils/highlight';
 import { useState } from 'react';
+import { getHighlightBadge } from '@/utils/highlight';
 import { Comment } from './Comment';
 
 type PostProps = {
@@ -31,19 +31,20 @@ export function Post({ post, index }: PostProps) {
   const highlightBadge = post.highlight ? getHighlightBadge(post.highlight) : null;
 
   return (
-    <article id={`post-${index}`} className="mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-      <div className="bg-gradient-to-r from-gray-50 to-white p-4">
-        <div className="flex gap-3">
+    <article id={`post-${index}`} className="mb-6 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-xl transition-all duration-200 hover:border-slate-600 hover:shadow-2xl">
+      <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-5">
+        <div className="flex gap-4">
           <button
             type="button"
-            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded border border-gray-300 bg-white text-xs text-gray-600 transition-colors hover:bg-gray-50"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 text-sm text-slate-300 transition-all duration-200 hover:border-cyan-500 hover:bg-slate-700 hover:text-cyan-400"
             onClick={() => setIsContentCollapsed(!isContentCollapsed)}
+            aria-label={isContentCollapsed ? 'Expand post' : 'Collapse post'}
           >
             {isContentCollapsed ? '►' : '▼'}
           </button>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg leading-tight font-semibold text-gray-900">
-              <span className="mr-1.5 text-gray-400">
+            <h2 className="text-lg leading-tight font-bold text-slate-100 sm:text-xl">
+              <span className="mr-2 text-slate-500">
                 {index + 1}
                 .
               </span>
@@ -51,42 +52,42 @@ export function Post({ post, index }: PostProps) {
                 href={post.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-700 hover:underline"
+                className="text-cyan-400 transition-colors duration-200 hover:text-cyan-300 hover:underline"
               >
                 {post.title}
               </a>
             </h2>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
               {highlightBadge && (
-                <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-xs font-bold ${highlightBadge.bgColor} ${highlightBadge.textColor} ${highlightBadge.borderColor}`}>
+                <span className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-bold ${highlightBadge.bgColor} ${highlightBadge.textColor} ${highlightBadge.borderColor}`}>
                   <span>{highlightBadge.icon}</span>
                   <span>{highlightBadge.label}</span>
                 </span>
               )}
-              <span className="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 font-semibold text-orange-700">
+              <span className="inline-flex items-center rounded-lg bg-orange-500/20 px-3 py-1 font-bold text-orange-400 ring-1 ring-orange-500/30">
                 {post.score}
                 {' '}
                 pts
               </span>
               {post.zScore !== undefined && (
-                <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 font-semibold text-purple-700">
+                <span className="inline-flex items-center rounded-lg bg-purple-500/20 px-3 py-1 font-bold text-purple-400 ring-1 ring-purple-500/30">
                   z:
                   {' '}
                   {post.zScore.toFixed(2)}
                 </span>
               )}
-              <span className="font-medium text-gray-700">
+              <span className="font-semibold text-slate-300">
                 u/
                 {post.author}
               </span>
-              <span className="text-gray-500">
+              <span className="text-slate-400">
                 {post.commentsFilteredCnt}
                 /
                 {post.commentsAllCnt}
                 {' '}
                 comments
               </span>
-              <span className="text-gray-400">{formatDate(post.created)}</span>
+              <span className="text-slate-500">{formatDate(post.created)}</span>
             </div>
           </div>
         </div>
@@ -94,49 +95,50 @@ export function Post({ post, index }: PostProps) {
 
       {!isContentCollapsed && (
         <div>
-          <div className="flex gap-3 border-t border-gray-100 bg-gray-50 px-4 py-2.5">
+          <div className="flex gap-4 border-t border-slate-700 bg-slate-800/50 px-5 py-3">
             <a
               href={post.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+              className="text-sm font-semibold text-cyan-400 transition-colors duration-200 hover:text-cyan-300 hover:underline"
             >
               View Content
             </a>
-            <span className="text-gray-300">•</span>
+            <span className="text-slate-600">•</span>
             <a
               href={`https://reddit.com${post.permalink}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+              className="text-sm font-semibold text-cyan-400 transition-colors duration-200 hover:text-cyan-300 hover:underline"
             >
               Reddit
             </a>
           </div>
 
           {hasText && (
-            <div className="border-t border-gray-100 bg-gradient-to-b from-gray-50 to-white p-4">
-              <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
+            <div className="border-t border-slate-700 bg-slate-900 p-5">
+              <p className="text-base leading-relaxed whitespace-pre-wrap text-slate-300">
                 {post.selftext}
               </p>
             </div>
           )}
 
           {hasComments && (
-            <div className="border-t border-gray-100 p-4">
-              <div className="mb-4 flex items-center gap-2">
+            <div className="border-t border-slate-700 p-5">
+              <div className="mb-4 flex items-center gap-3">
                 <button
                   type="button"
-                  className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded border border-gray-300 bg-white text-xs text-gray-600 transition-colors hover:bg-gray-50"
+                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 text-sm text-slate-300 transition-all duration-200 hover:border-cyan-500 hover:bg-slate-700 hover:text-cyan-400"
                   onClick={() => setAreCommentsCollapsed(!areCommentsCollapsed)}
+                  aria-label={areCommentsCollapsed ? 'Expand comments' : 'Collapse comments'}
                 >
                   {areCommentsCollapsed ? '►' : '▼'}
                 </button>
-                <h3 className="text-base font-semibold text-gray-900">Comments</h3>
-                <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
+                <h3 className="text-lg font-bold text-slate-100">Comments</h3>
+                <span className="inline-flex items-center rounded-lg bg-orange-500/20 px-2.5 py-1 text-xs font-bold text-orange-400 ring-1 ring-orange-500/30">
                   {post.commentsFilteredCnt}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-sm text-slate-500">
                   (
                   {post.commentsAllCnt}
                   {' '}
@@ -144,7 +146,7 @@ export function Post({ post, index }: PostProps) {
                 </span>
               </div>
               {!areCommentsCollapsed && (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {post.comments.map((comment, commentIndex) => (
                     <Comment key={commentIndex} comment={comment} />
                   ))}
