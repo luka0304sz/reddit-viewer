@@ -1,11 +1,24 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type ConfigFormProps = {
   mode: 'single' | 'multi';
 };
+
+const FAVORITE_SUBREDDITS = [
+  'ClaudeAI',
+  'n8n',
+  'node',
+  'ChatGPTCoding',
+  'OpenAI',
+  'ChatGPT',
+  'webdev',
+  'react',
+  'reactjs',
+  'homeassistant',
+];
 
 export function ConfigForm({ mode }: ConfigFormProps) {
   const router = useRouter();
@@ -17,6 +30,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
 
   // Multi-subreddit mode state
   const [subreddits, setSubreddits] = useState(searchParams.get('subreddits') || '');
+  const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set());
   const [hoursBack, setHoursBack] = useState(searchParams.get('hoursBack') || '24');
   const [postZScoreThreshold, setPostZScoreThreshold] = useState(searchParams.get('postZScoreThreshold') || '0.7');
   const [commentZScoreThreshold, setCommentZScoreThreshold] = useState(searchParams.get('commentZScoreThreshold') || '0.7');
@@ -30,6 +44,68 @@ export function ConfigForm({ mode }: ConfigFormProps) {
   const [maxComments, setMaxComments] = useState(searchParams.get('maxComments') || '10');
   const [minimumPostScore, setMinimumPostScore] = useState(searchParams.get('minimumPostScore') || mode === 'single' ? '5' : '');
   const [minimumCommentScore, setMinimumCommentScore] = useState(searchParams.get('minimumCommentScore') || mode === 'single' ? '3' : '');
+
+  // Initialize selected favorites from URL on mount
+  useEffect(() => {
+    if (mode === 'multi') {
+      const initialSubreddits = searchParams.get('subreddits') || '';
+      if (initialSubreddits) {
+        const currentSubreddits = initialSubreddits
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+        const selected = new Set(
+          currentSubreddits.filter(s =>
+            FAVORITE_SUBREDDITS.some(fav => fav.toLowerCase() === s.toLowerCase()),
+          ),
+        );
+        setSelectedFavorites(selected);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const toggleFavorite = (subreddit: string) => {
+    const newSelected = new Set(selectedFavorites);
+    if (newSelected.has(subreddit)) {
+      newSelected.delete(subreddit);
+    } else {
+      newSelected.add(subreddit);
+    }
+    setSelectedFavorites(newSelected);
+
+    // Update subreddits field
+    const selectedArray = Array.from(newSelected);
+    setSubreddits(selectedArray.join(', '));
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedFavorites.size === FAVORITE_SUBREDDITS.length) {
+      // Deselect all
+      setSelectedFavorites(new Set());
+      setSubreddits('');
+    } else {
+      // Select all
+      const allSelected = new Set(FAVORITE_SUBREDDITS);
+      setSelectedFavorites(allSelected);
+      setSubreddits(FAVORITE_SUBREDDITS.join(', '));
+    }
+  };
+
+  const handleSubredditsChange = (value: string) => {
+    setSubreddits(value);
+    // Update checkboxes based on manual input
+    const currentSubreddits = value
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const selected = new Set(
+      currentSubreddits.filter(s =>
+        FAVORITE_SUBREDDITS.some(fav => fav.toLowerCase() === s.toLowerCase()),
+      ),
+    );
+    setSelectedFavorites(selected);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,21 +178,59 @@ export function ConfigForm({ mode }: ConfigFormProps) {
               </div>
             )
           : (
-              <div className="form-field form-field-full">
-                <label htmlFor="subreddits">
-                  Subreddits
-                  {' '}
-                  <span className="text-gray-500">(comma-separated)</span>
-                </label>
-                <input
-                  id="subreddits"
-                  type="text"
-                  value={subreddits}
-                  onChange={e => setSubreddits(e.target.value)}
-                  placeholder="ClaudeAI, programming, linux"
-                  required
-                />
-              </div>
+              <>
+                <div className="form-field-full">
+                  <div className="mb-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="text-sm font-medium text-gray-700">
+                        Favorite Subreddits
+                      </div>
+                      <button
+                        type="button"
+                        onClick={toggleSelectAll}
+                        className="rounded-md bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-200"
+                      >
+                        {selectedFavorites.size === FAVORITE_SUBREDDITS.length ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 rounded-md border border-gray-300 bg-gray-50 p-3 sm:grid-cols-3 lg:grid-cols-5">
+                      {FAVORITE_SUBREDDITS.map(subreddit => (
+                        <label
+                          key={subreddit}
+                          className="flex cursor-pointer items-center gap-2 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedFavorites.has(subreddit)}
+                            onChange={() => toggleFavorite(subreddit)}
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-gray-700">
+                            r/
+                            {subreddit}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-field form-field-full">
+                  <label htmlFor="subreddits">
+                    Subreddits
+                    {' '}
+                    <span className="text-gray-500">(comma-separated)</span>
+                  </label>
+                  <input
+                    id="subreddits"
+                    type="text"
+                    value={subreddits}
+                    onChange={e => handleSubredditsChange(e.target.value)}
+                    placeholder="ClaudeAI, programming, linux"
+                    required
+                  />
+                </div>
+              </>
             )}
 
         <div className="form-field">
