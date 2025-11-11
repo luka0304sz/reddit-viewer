@@ -1,13 +1,18 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type ConfigFormProps = {
   mode: 'single' | 'multi';
 };
 
-const FAVORITE_SUBREDDITS = [
+type FavoriteSubreddit = {
+  name: string;
+  starred: boolean;
+};
+
+const DEFAULT_FAVORITE_SUBREDDITS: string[] = [
   'ClaudeAI',
   'n8n',
   'node',
@@ -20,6 +25,8 @@ const FAVORITE_SUBREDDITS = [
   'homeassistant',
 ];
 
+const STORAGE_KEY = 'reddit-viewer-custom-subreddits';
+
 export function ConfigForm({ mode }: ConfigFormProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -31,6 +38,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
   // Multi-subreddit mode state
   const [subreddits, setSubreddits] = useState(searchParams.get('subreddits') || '');
   const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set());
+  const [customFavorites, setCustomFavorites] = useState<FavoriteSubreddit[]>([]);
   const [hoursBack, setHoursBack] = useState(searchParams.get('hoursBack') || '24');
   const [postZScoreThreshold, setPostZScoreThreshold] = useState(searchParams.get('postZScoreThreshold') || '0.7');
   const [commentZScoreThreshold, setCommentZScoreThreshold] = useState(searchParams.get('commentZScoreThreshold') || '0.7');
@@ -45,6 +53,62 @@ export function ConfigForm({ mode }: ConfigFormProps) {
   const [minimumPostScore, setMinimumPostScore] = useState(searchParams.get('minimumPostScore') || mode === 'single' ? '5' : '');
   const [minimumCommentScore, setMinimumCommentScore] = useState(searchParams.get('minimumCommentScore') || mode === 'single' ? '3' : '');
 
+  // Load custom favorites from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined' || mode !== 'multi') {
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed: FavoriteSubreddit[] = JSON.parse(stored);
+        setCustomFavorites(parsed);
+      }
+    } catch (error) {
+      console.error('Failed to load custom favorites:', error);
+    }
+  }, [mode]);
+
+  // Save custom favorites to localStorage
+  const saveCustomFavorites = useCallback((favorites: FavoriteSubreddit[]) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+      setCustomFavorites(favorites);
+    } catch (error) {
+      console.error('Failed to save custom favorites:', error);
+    }
+  }, []);
+
+  // Merge and sort all favorites
+  const allFavorites = useMemo(() => {
+    const merged = new Map<string, FavoriteSubreddit>();
+
+    // Add default favorites (not starred by default)
+    DEFAULT_FAVORITE_SUBREDDITS.forEach((name) => {
+      merged.set(name.toLowerCase(), { name, starred: false });
+    });
+
+    // Override with custom favorites (which may have starred status)
+    customFavorites.forEach((fav) => {
+      merged.set(fav.name.toLowerCase(), fav);
+    });
+
+    const favArray = Array.from(merged.values());
+
+    // Sort: starred first (alphabetically), then non-starred (alphabetically)
+    return favArray.sort((a, b) => {
+      if (a.starred !== b.starred) {
+        return a.starred ? -1 : 1;
+      }
+      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    });
+  }, [customFavorites]);
+
   // Initialize selected favorites from URL on mount
   useEffect(() => {
     if (mode === 'multi') {
@@ -56,7 +120,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
           .filter(Boolean);
         const selected = new Set(
           currentSubreddits.filter(s =>
-            FAVORITE_SUBREDDITS.some(fav => fav.toLowerCase() === s.toLowerCase()),
+            allFavorites.some(fav => fav.name.toLowerCase() === s.toLowerCase()),
           ),
         );
         setSelectedFavorites(selected);
@@ -79,29 +143,62 @@ export function ConfigForm({ mode }: ConfigFormProps) {
     setSubreddits(selectedArray.join(', '));
   };
 
+  const toggleStar = (subredditName: string) => {
+    const updated = customFavorites.map(fav =>
+      fav.name.toLowerCase() === subredditName.toLowerCase()
+        ? { ...fav, starred: !fav.starred }
+        : fav,
+    );
+
+    // If not in custom favorites, add it
+    if (!customFavorites.some(fav => fav.name.toLowerCase() === subredditName.toLowerCase())) {
+      updated.push({ name: subredditName, starred: true });
+    }
+
+    saveCustomFavorites(updated);
+  };
+
   const toggleSelectAll = () => {
-    if (selectedFavorites.size === FAVORITE_SUBREDDITS.length) {
+    if (selectedFavorites.size === allFavorites.length) {
       // Deselect all
       setSelectedFavorites(new Set());
       setSubreddits('');
     } else {
       // Select all
-      const allSelected = new Set(FAVORITE_SUBREDDITS);
+      const allSelected = new Set(allFavorites.map(f => f.name));
       setSelectedFavorites(allSelected);
-      setSubreddits(FAVORITE_SUBREDDITS.join(', '));
+      setSubreddits(allFavorites.map(f => f.name).join(', '));
     }
   };
 
   const handleSubredditsChange = (value: string) => {
     setSubreddits(value);
-    // Update checkboxes based on manual input
+
+    // Parse subreddits and add new ones to custom favorites
     const currentSubreddits = value
       .split(',')
       .map(s => s.trim())
       .filter(Boolean);
+
+    // Find new subreddits not in allFavorites
+    const newSubreddits = currentSubreddits.filter(
+      sub => !allFavorites.some(fav => fav.name.toLowerCase() === sub.toLowerCase()),
+    );
+
+    if (newSubreddits.length > 0) {
+      const updated = [...customFavorites];
+      newSubreddits.forEach((sub) => {
+        if (!updated.some(fav => fav.name.toLowerCase() === sub.toLowerCase())) {
+          updated.push({ name: sub, starred: false });
+        }
+      });
+      saveCustomFavorites(updated);
+    }
+
+    // Update checkboxes based on manual input
     const selected = new Set(
       currentSubreddits.filter(s =>
-        FAVORITE_SUBREDDITS.some(fav => fav.toLowerCase() === s.toLowerCase()),
+        allFavorites.some(fav => fav.name.toLowerCase() === s.toLowerCase()),
       ),
     );
     setSelectedFavorites(selected);
@@ -184,6 +281,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
                     <div className="mb-3 flex items-center justify-between">
                       <div className="text-sm font-semibold text-slate-300">
                         Favorite Subreddits
+                        <span className="ml-2 text-xs text-slate-500">(⭐ = top of list)</span>
                       </div>
                       <button
                         type="button"
@@ -191,26 +289,41 @@ export function ConfigForm({ mode }: ConfigFormProps) {
                         className="rounded-lg bg-cyan-500/20 px-4 py-2 text-xs font-bold text-cyan-400 ring-1 ring-cyan-500/30 transition-all duration-200 hover:bg-cyan-500/30"
                         style={{ minHeight: '36px' }}
                       >
-                        {selectedFavorites.size === FAVORITE_SUBREDDITS.length ? 'Deselect All' : 'Select All'}
+                        {selectedFavorites.size === allFavorites.length ? 'Deselect All' : 'Select All'}
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-600 bg-slate-800 p-4 sm:grid-cols-3 lg:grid-cols-5">
-                      {FAVORITE_SUBREDDITS.map(subreddit => (
-                        <label
-                          key={subreddit}
-                          className="flex cursor-pointer items-center gap-2.5 text-sm"
+                      {allFavorites.map(favorite => (
+                        <div
+                          key={favorite.name}
+                          className="flex items-center gap-1.5"
                         >
-                          <input
-                            type="checkbox"
-                            checked={selectedFavorites.has(subreddit)}
-                            onChange={() => toggleFavorite(subreddit)}
-                            className="h-5 w-5 rounded border-slate-600 bg-slate-800 text-cyan-500 transition-all focus:ring-2 focus:ring-cyan-500/50"
-                          />
-                          <span className="font-medium text-slate-300">
-                            r/
-                            {subreddit}
-                          </span>
-                        </label>
+                          <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={selectedFavorites.has(favorite.name)}
+                              onChange={() => toggleFavorite(favorite.name)}
+                              className="h-5 w-5 rounded border-slate-600 bg-slate-800 text-cyan-500 transition-all focus:ring-2 focus:ring-cyan-500/50"
+                            />
+                            <span className="font-medium text-slate-300">
+                              r/
+                              {favorite.name}
+                            </span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => toggleStar(favorite.name)}
+                            className={`flex-shrink-0 text-base transition-all duration-200 hover:scale-110 ${
+                              favorite.starred
+                                ? 'text-yellow-400 hover:text-yellow-300'
+                                : 'text-slate-600 hover:text-yellow-500'
+                            }`}
+                            title={favorite.starred ? 'Remove from top' : 'Pin to top'}
+                            aria-label={favorite.starred ? 'Unstar subreddit' : 'Star subreddit'}
+                          >
+                            {favorite.starred ? '⭐' : '☆'}
+                          </button>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -220,7 +333,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
                   <label htmlFor="subreddits">
                     Subreddits
                     {' '}
-                    <span className="text-gray-500">(comma-separated)</span>
+                    <span className="text-slate-500">(comma-separated, new ones saved automatically)</span>
                   </label>
                   <input
                     id="subreddits"
@@ -357,7 +470,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
           <label htmlFor="minimumPostScore">
             Min Post Score
             {' '}
-            {mode === 'multi' && <span className="text-gray-500">(optional)</span>}
+            {mode === 'multi' && <span className="text-slate-500">(optional)</span>}
           </label>
           <input
             id="minimumPostScore"
@@ -373,7 +486,7 @@ export function ConfigForm({ mode }: ConfigFormProps) {
           <label htmlFor="minimumCommentScore">
             Min Comment Score
             {' '}
-            {mode === 'multi' && <span className="text-gray-500">(optional)</span>}
+            {mode === 'multi' && <span className="text-slate-500">(optional)</span>}
           </label>
           <input
             id="minimumCommentScore"
