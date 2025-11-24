@@ -89,50 +89,50 @@ export function ParamDocs() {
   ];
 
   return (
-    <div className="mb-8 rounded-lg border border-blue-200 bg-blue-50 p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-blue-900">
+    <div className="mb-8 rounded-xl border border-cyan-500/30 bg-slate-900 p-6 shadow-xl">
+      <h2 className="mb-6 text-xl font-bold text-slate-100">
         Query Parameters Reference
       </h2>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-blue-300">
-              <th className="pb-2 text-left font-semibold text-blue-900">Parameter</th>
-              <th className="pb-2 text-left font-semibold text-blue-900">Type</th>
-              <th className="pb-2 text-left font-semibold text-blue-900">Default</th>
-              <th className="pb-2 text-left font-semibold text-blue-900">Description</th>
+            <tr className="border-b-2 border-slate-700">
+              <th className="pb-3 text-left font-bold text-slate-200">Parameter</th>
+              <th className="pb-3 text-left font-bold text-slate-200">Type</th>
+              <th className="pb-3 text-left font-bold text-slate-200">Default</th>
+              <th className="pb-3 text-left font-bold text-slate-200">Description</th>
             </tr>
           </thead>
           <tbody>
             {params.map(param => (
-              <tr key={param.name} className="border-b border-blue-200">
-                <td className="py-2 pr-4">
-                  <code className="rounded bg-blue-100 px-2 py-1 font-mono text-xs text-blue-800">
+              <tr key={param.name} className="border-b border-slate-800">
+                <td className="py-3 pr-4">
+                  <code className="rounded-lg bg-cyan-500/20 px-2.5 py-1 font-mono text-xs text-cyan-300">
                     {param.name}
                   </code>
                   {param.required && (
-                    <span className="ml-1 text-xs text-red-600">*</span>
+                    <span className="ml-1.5 text-xs text-red-400">*</span>
                   )}
                 </td>
-                <td className="py-2 pr-4 text-blue-700">{param.type}</td>
-                <td className="py-2 pr-4">
-                  <code className="rounded bg-blue-100 px-2 py-1 font-mono text-xs text-blue-800">
+                <td className="py-3 pr-4 text-slate-400">{param.type}</td>
+                <td className="py-3 pr-4">
+                  <code className="rounded-lg bg-slate-800 px-2.5 py-1 font-mono text-xs text-slate-300">
                     {param.default}
                   </code>
                 </td>
-                <td className="py-2 text-blue-700">
+                <td className="py-3 text-slate-300">
                   {param.description}
                   {param.example && (
-                    <div className="mt-1 text-xs">
+                    <div className="mt-1.5 text-xs">
                       Example:
                       {' '}
-                      <code className="rounded bg-blue-100 px-1 py-0.5 font-mono">
+                      <code className="rounded-lg bg-slate-800 px-2 py-0.5 font-mono text-slate-400">
                         {param.example}
                       </code>
                     </div>
                   )}
                   {param.max && (
-                    <span className="ml-1 text-xs">
+                    <span className="ml-1.5 text-xs text-slate-500">
                       (max:
                       {param.max}
                       )
@@ -144,9 +144,9 @@ export function ParamDocs() {
           </tbody>
         </table>
       </div>
-      <div className="mt-4 text-xs text-blue-700">
-        <p className="font-semibold">Understanding Z-Scores:</p>
-        <ul className="mt-1 ml-4 list-disc space-y-1">
+      <div className="mt-6 rounded-lg border border-slate-700 bg-slate-800/50 p-4 text-sm text-slate-300">
+        <p className="font-bold text-slate-200">Understanding Z-Scores:</p>
+        <ul className="mt-2 ml-5 list-disc space-y-1.5">
           <li>
             Z-score = 0.0: Average (50th percentile)
           </li>
@@ -160,7 +160,7 @@ export function ParamDocs() {
             Z-score = 2.0: Better than 97% of posts (very hot!)
           </li>
         </ul>
-        <p className="mt-2">
+        <p className="mt-3">
           Z-scores normalize popularity across different subreddit sizes. A post with 50 upvotes might be "hot" in a small subreddit but insignificant in a large one.
         </p>
       </div>
